@@ -1,6 +1,6 @@
 # -*- main generico -*-
-from model import Model
+from tempera import Tempera
 
-main = Model()
-main.execute()
+main = Tempera()
+main.execucao()
 
