@@ -21,7 +21,7 @@ class Tempera:
         #inicializa variaveis da ordem de entrega aleatórias
         self.order = ord
         self.tempo =0
-        self.iteracoes = 10000
+        self.iteracoes = 100000
         #inicializa o grafico, com o plot da curva de risco
         self.create_plt()
 

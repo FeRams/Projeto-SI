@@ -1,4 +1,8 @@
 import random
+import matplotlib.pyplot as plt
+import numpy as np
+
+plt_alg_gen = []
 
 #tabela de tempos de deslocamento entre cada unidade. posição [0,3], por exemplo,
 #representa o tempo para ir do depósito até o Bacacheri
@@ -88,26 +92,26 @@ class GeneticAlgo():
     #cria um cromossomo aleatório
     def generate_crom(self):
         for i in range(self.population_size):
-            gene = [self.start]
+            cromossom = [self.start]
             options = [k for k in self.centers]
-            while len(gene) < len(self.centers)+1:
+            while len(cromossom) < len(self.centers)+1:
                 center = random.choice(options)
                 loc = options.index(center)
-                gene.append(center)
+                cromossom.append(center)
                 del options[loc]
-            gene.append(self.start)
-            self.crom.append(gene)
+            cromossom.append(self.start)
+            self.crom.append(cromossom)
         return self.crom
     
     #função que avalia o tempo de deslocamento da combinação descrita por cada cromossomo
     def evaluate_fitness(self):
         self.total_fitness = 0
         fitness_scores = []
-        for gene in self.crom:
+        for cromossom in self.crom:
             total_distance = 0
-            for idx in range(1,len(gene)):
-                center_b = gene[idx]
-                center_a = gene[idx-1]
+            for idx in range(1,len(cromossom)):
+                center_b = cromossom[idx]
+                center_a = cromossom[idx-1]
                 try:
                     dist = self.time_map[center_a][center_b]
                 except:
@@ -173,16 +177,16 @@ class GeneticAlgo():
                     break  
 
     #operador de mutação
-    def mutacao (self, gene):
+    def mutacao (self, cromossom):
         sorteado = random.randint(0,100)
         #sorteia se vai ou não haver permutação no cromossomo analisado
         if sorteado < self.mutation_prob:
             #se houver mutação, sorteia dois genes e troca eles de lugar
-            i = random.randint (0, len(gene)-1)
-            j = random.randint(0, len(gene)-1)
-            aux = gene[i]
-            gene[i]= gene[j]
-            gene[j] = aux            
+            i = random.randint (0, len(cromossom)-1)
+            j = random.randint(0, len(cromossom)-1)
+            aux = cromossom[i]
+            cromossom[i]= cromossom[j]
+            cromossom[j] = aux            
 
     #função que engloba a criação da nova geração
     def evolve(self):
@@ -231,9 +235,9 @@ class GeneticAlgo():
         self.evolve()
         self.fitness_scores = self.evaluate_fitness()
         while(len(self.crom)>30):
-            worst_gene_index = self.fitness_scores.index(min(self.fitness_scores))
-            del self.crom[worst_gene_index]
-            del self.fitness_scores[worst_gene_index]
+            worst_cromossom_index = self.fitness_scores.index(min(self.fitness_scores))
+            del self.crom[worst_cromossom_index]
+            del self.fitness_scores[worst_cromossom_index]
         return max(self.fitness_scores),self.crom[self.fitness_scores.index(max(self.fitness_scores))]
     
     def converge(self):
@@ -241,13 +245,58 @@ class GeneticAlgo():
         for i in range(self.iterations):
             values = self.prune_crom()
             current_score = values[0]
-            current_best_gene = values[1]
+            current_best_cromossom = values[1]
+            plt_alg_gen.append(1/current_score)
             #imprime o resultado a cada 25 gerações
             if i % 25 == 0:
                 print(f"{int(1/current_score)} minutos")
-        print(*current_best_gene, sep = ", ")
-        return current_best_gene
+        print(*current_best_cromossom, sep = ", ")
+        return current_best_cromossom
+
+
+def greedy():
+    current = unidades[0]
+    total = 0
+    result = [unidades[0]]
+    for i in range (0,10):
+        min = 50
+        next = -1
+        for j in unidades:
+            dist = 50
+            if (current != j):
+                try:
+                    dist = dist_dict[current][j]
+                except:
+                    dist = dist_dict[j][current]
+            if (not(j in result) and dist<min):
+                min = dist
+                next = j
+        if not (next in result):
+            result.append(next)
+            total += min
+            current = next
+    result.append(unidades[0])
+    try:
+        total += dist_dict[unidades[0]][current]
+    except:
+        total += dist_dict[current][unidades[0]]
+    return total
+
+        
+
+def show_progression():
+    plt.plot (plt_alg_gen, "-g", label = "genetico")
+    greedy_result = greedy()
+    greedy_plt = []
+    for i in plt_alg_gen:
+        greedy_plt.append(greedy_result)
+    plt.plot(greedy_plt, "-b", label="greedy")
+    plt.legend(loc="upper right")
+    plt.show()
 
 g = GeneticAlgo(time_map=dist_dict,start='Depósito',mutation_prob=0.05,crossover_prob=10,
                  population_size=30, iterations=500)
 g.converge()
+
+show_progression()
+
